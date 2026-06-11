@@ -1,122 +1,111 @@
 import 'package:flutter/material.dart';
-
-void main() {
-  runApp(const MyApp());
+import 'package:intl/date_symbol_data_local.dart';
+import 'models/produit_transforme.dart';
+import 'screens/liste_produits_screen.dart';
+import 'screens/detail_produit_screen.dart';
+import 'screens/formulaire_screen.dart';
+import 'screens/about_screen.dart';
+void main() async {
+WidgetsFlutterBinding.ensureInitialized();
+// Initialise les données de localisation pour le français
+// Obligatoire pour DateFormat('dd MMM yyyy', 'fr_FR')
+await initializeDateFormatting('fr_FR', null);
+runApp(const GieProduitsApp());
 }
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
-  }
+class GieProduitsApp extends StatelessWidget {
+const GieProduitsApp({super.key});
+@override
+Widget build(BuildContext context) {
+return MaterialApp(
+title: 'GIE Produits',
+debugShowCheckedModeBanner: false,
+// ── THÈME PERSONNALISÉ ──
+theme: ThemeData(
+useMaterial3: true,
+colorScheme: ColorScheme.fromSeed(
+seedColor: const Color(0xFF2D5016), // vert naturel/karité
+brightness: Brightness.light,
+),
+scaffoldBackgroundColor: const Color(0xFFF7F6F3),
+appBarTheme: const AppBarTheme(
+backgroundColor: Color(0xFFF7F6F3),
+elevation: 0,
+scrolledUnderElevation: 0,
+),
+),
+// ── ROUTES NOMMÉES ──
+// 3 des 4 routes déclarées normalement
+initialRoute: '/',
+routes: {
+'/about': (context) => const AboutScreen(),
+'/detail': (context) => const DetailProduitScreen(),
+'/formulaire': (context) => const FormulaireScreen(),
+},
+// Route '/' via onGenerateRoute pour passer les données initiales
+onGenerateRoute: (settings) {
+if (settings.name == '/') {
+return MaterialPageRoute(
+builder: (_) => ListeProduitsScreen(
+produits: _donneesInitiales(),
+),
+);
 }
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
+return null;
+},
+);
 }
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ),
-    );
-  }
+}
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// DONNÉES INITIALES — 5 produits réels
+// Source : jolofteranga.com/collections/plantes-medicinales
+// Collecte : Juin 2026
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+List<ProduitTransforme> _donneesInitiales() {
+return [
+ProduitTransforme(
+id: '1',
+produit: 'Poudre de Nep-Nep',
+categorie: CategorieProduit.alimentaire,
+quantiteProduite: 25,
+prixUnitaire: 4500,
+dateProduction: DateTime(2026, 5, 8),
+vendu: false,
+),
+ProduitTransforme(
+id: '2',
+produit: 'Thé Wass (kinkeliba)',
+categorie: CategorieProduit.boisson,
+quantiteProduite: 40,
+prixUnitaire: 3200,
+dateProduction: DateTime(2026, 5, 12),
+vendu: true,
+),
+ProduitTransforme(
+id: '3',
+produit: 'Feuilles de Nguer',
+categorie: CategorieProduit.cosmetique,
+quantiteProduite: 20,
+prixUnitaire: 3900,
+dateProduction: DateTime(2026, 5, 20),
+vendu: false,
+),
+ProduitTransforme(
+id: '4',
+produit: 'Poudre de Baobab',
+categorie: CategorieProduit.alimentaire,
+quantiteProduite: 35,
+prixUnitaire: 5000,
+dateProduction: DateTime(2026, 6, 1),
+vendu: true,
+),
+ProduitTransforme(
+id: '5',
+produit: 'Huile de coco bio',
+categorie: CategorieProduit.cosmetique,
+quantiteProduite: 15,
+prixUnitaire: 6500,
+dateProduction: DateTime(2026, 6, 3),
+vendu: false,
+),
+];
 }
