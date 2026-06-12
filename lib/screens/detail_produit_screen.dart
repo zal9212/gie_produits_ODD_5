@@ -1,4 +1,5 @@
-import 'dart:io';
+import 'dart:io' show File;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/produit_transforme.dart';
@@ -6,33 +7,52 @@ import '../widgets/badge_statut.dart';
 
 class DetailProduitScreen extends StatelessWidget {
   const DetailProduitScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
-// ── RÉCUPÉRATION DE L'ARGUMENT ──
-// L'objet a été passé via arguments: dans Navigator.pushNamed
-    final produit =
-        ModalRoute.of(context)!.settings.arguments as ProduitTransforme;
+    final arg = ModalRoute.of(context)?.settings.arguments;
+    if (arg is! ProduitTransforme) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF7F6F3),
+        body: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline,
+                    size: 48, color: Color(0xFF888780)),
+                const SizedBox(height: 16),
+                const Text('Produit introuvable',
+                    style: TextStyle(fontSize: 18, color: Color(0xFF888780))),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Retour'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+    final produit = arg;
     return Scaffold(
       backgroundColor: const Color(0xFFF7F6F3),
       body: SafeArea(
         child: SingleChildScrollView(
-          // ← tout l'écran est scrollable
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 16),
-// ── BARRE HAUT ──
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-// Bouton retour
                     GestureDetector(
                       onTap: () => Navigator.pop(context),
                       child: Container(
-                        width: 36,
-                        height: 36,
+                        width: 36, height: 36,
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(18),
@@ -42,85 +62,53 @@ class DetailProduitScreen extends StatelessWidget {
                             size: 16, color: Color(0xFF1A1A1A)),
                       ),
                     ),
-// Badge statut en haut à droite
                     BadgeStatut(vendu: produit.vendu),
                   ],
                 ),
                 const SizedBox(height: 20),
-// ── HERO IMAGE ou EMOJI ──
                 Container(
-                  width: double.infinity,
-                  height: 200,
+                  width: double.infinity, height: 200,
                   decoration: BoxDecoration(
                     color: const Color(0xFFF0EDE6),
                     borderRadius: BorderRadius.circular(18),
                   ),
                   clipBehavior: Clip.hardEdge,
                   child: produit.imagePath != null
-                      ? Image.file(
-                          File(produit.imagePath!),
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _heroFallback(produit),
-                        )
+                      ? kIsWeb
+                          ? Image.network(produit.imagePath!, fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => _heroFallback(produit))
+                          : Image.file(File(produit.imagePath!), fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => _heroFallback(produit))
                       : _heroFallback(produit),
                 ),
                 const SizedBox(height: 16),
-// ── NOM + CATÉGORIE ──
-                Text(
-                  produit.produit,
-                  style: const TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF1A1A1A),
-                  ),
-                ),
+                Text(produit.produit, style: const TextStyle(
+                    fontSize: 26, fontWeight: FontWeight.w600, color: Color(0xFF1A1A1A))),
                 const SizedBox(height: 4),
-                Text(
-                  '${produit.categorie.label} · GIE Féminin',
-                  style:
-                      const TextStyle(fontSize: 14, color: Color(0xFF888780)),
-                ),
+                Text('${produit.categorie.label} · GIE Féminin',
+                    style: const TextStyle(fontSize: 14, color: Color(0xFF888780))),
                 const SizedBox(height: 16),
-// ── GRILLE STATS 2×2 ──
                 GridView.count(
-                  crossAxisCount: 2,
-                  shrinkWrap: true,
-// IMPORTANT : désactive le scroll interne car on est
-// déjà dans un SingleChildScrollView
+                  crossAxisCount: 2, shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  childAspectRatio: 2.2,
+                  crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: 2.2,
                   children: [
-                    _StatBox(
-                      label: 'Quantité produite',
-                      valeur: '${produit.quantiteProduite} unités',
-                    ),
-                    _StatBox(
-                      label: 'Prix unitaire',
-                      valeur: _formatFcfa(produit.prixUnitaire),
-                    ),
-                    _StatBox(
-                      label: 'Date de production',
-                      valeur: DateFormat('dd MMM yyyy', 'fr_FR')
-                          .format(produit.dateProduction),
-                    ),
-                    _StatBox(
-                      label: 'Catégorie',
-                      valeur: produit.categorie.label,
-                    ),
+                    _StatBox(label: 'Quantité produite',
+                        valeur: '${produit.quantiteProduite} unités'),
+                    _StatBox(label: 'Prix unitaire',
+                        valeur: _formatFcfa(produit.prixUnitaire)),
+                    _StatBox(label: 'Date de production',
+                        valeur: DateFormat('dd MMM yyyy', 'fr_FR')
+                            .format(produit.dateProduction)),
+                    _StatBox(label: 'Catégorie', valeur: produit.categorie.label),
                   ],
                 ),
                 const SizedBox(height: 12),
-// ── VALEUR TOTALE ──
                 Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
+                  width: double.infinity, padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    border:
-                        Border.all(color: const Color(0xFFE8E8E8), width: 0.8),
+                    color: Colors.white, borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFE8E8E8), width: 0.8),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -129,23 +117,15 @@ class DetailProduitScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text('Valeur totale',
-                              style: TextStyle(
-                                  fontSize: 12, color: Color(0xFF888780))),
+                              style: TextStyle(fontSize: 12, color: Color(0xFF888780))),
                           const SizedBox(height: 4),
-                          Text(
-// Appel de la méthode valeurTotale() du modèle
-                            _formatFcfa(produit.valeurTotale()),
-                            style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF1A1A1A),
-                            ),
-                          ),
+                          Text(_formatFcfa(produit.valeurTotale()),
+                              style: const TextStyle(fontSize: 22,
+                                  fontWeight: FontWeight.w600, color: Color(0xFF1A1A1A))),
                         ],
                       ),
                       Container(
-                        width: 40,
-                        height: 40,
+                        width: 40, height: 40,
                         decoration: BoxDecoration(
                           color: const Color(0xFFF5F5F3),
                           borderRadius: BorderRadius.circular(10),
@@ -157,21 +137,15 @@ class DetailProduitScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 24),
-// ── BOUTONS MODIFIER / SUPPRIMER ──
                 Row(
                   children: [
-// Bouton Modifier
                     Expanded(
                       child: GestureDetector(
                         onTap: () async {
-// Passe le produit au formulaire en mode modification
                           final modifie = await Navigator.pushNamed(
-                            context,
-                            '/formulaire',
-                            arguments: produit, // ← passage d'argument
-                          );
+                              context, '/formulaire', arguments: produit);
+                          if (!context.mounted) return;
                           if (modifie is ProduitTransforme) {
-// Retourne le produit modifié à la liste
                             Navigator.pop(context, modifie);
                           }
                         },
@@ -184,21 +158,16 @@ class DetailProduitScreen extends StatelessWidget {
                           child: const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.edit_outlined,
-                                  size: 16, color: Colors.white),
+                              Icon(Icons.edit_outlined, size: 16, color: Colors.white),
                               SizedBox(width: 6),
-                              Text('Modifier',
-                                  style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                      color: Colors.white)),
+                              Text('Modifier', style: TextStyle(
+                                  fontSize: 14, fontWeight: FontWeight.w500, color: Colors.white)),
                             ],
                           ),
                         ),
                       ),
                     ),
                     const SizedBox(width: 10),
-// Bouton Supprimer
                     Expanded(
                       child: GestureDetector(
                         onTap: () => _confirmerSuppression(context, produit),
@@ -216,8 +185,7 @@ class DetailProduitScreen extends StatelessWidget {
                                   size: 16, color: Color(0xFF888780)),
                               SizedBox(width: 6),
                               Text('Supprimer',
-                                  style: TextStyle(
-                                      fontSize: 14, color: Color(0xFF888780))),
+                                  style: TextStyle(fontSize: 14, color: Color(0xFF888780))),
                             ],
                           ),
                         ),
@@ -234,7 +202,6 @@ class DetailProduitScreen extends StatelessWidget {
     );
   }
 
-// ── SUPPRESSION AVEC CONFIRMATION ──
   void _confirmerSuppression(BuildContext context, ProduitTransforme produit) {
     showDialog(
       context: context,
@@ -248,14 +215,14 @@ class DetailProduitScreen extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx), // ferme uniquement le dialog
+            onPressed: () => Navigator.pop(ctx),
             child: const Text('Annuler',
                 style: TextStyle(color: Color(0xFF888780))),
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(ctx); // 1. ferme le dialog
-              Navigator.pop(context, 'supprimer'); // 2. retourne à la liste
+              Navigator.pop(ctx);
+              Navigator.pop(context, 'supprimer');
             },
             child: const Text('Supprimer', style: TextStyle(color: Colors.red)),
           ),
@@ -264,13 +231,12 @@ class DetailProduitScreen extends StatelessWidget {
     );
   }
 
-// ── HERO FALLBACK (pas d'image) ──
   Widget _heroFallback(ProduitTransforme produit) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(produit.categorie.emoji, style: const TextStyle(fontSize: 56)),
+          Icon(produit.categorie.icon, size: 56, color: const Color(0xFF1A1A1A)),
           const SizedBox(height: 8),
           Text(produit.categorie.label,
               style: const TextStyle(fontSize: 13, color: Color(0xFF888780))),
@@ -279,18 +245,17 @@ class DetailProduitScreen extends StatelessWidget {
     );
   }
 
-// Formater un montant FCFA avec séparateurs de milliers
   String _formatFcfa(int montant) {
     final f = NumberFormat('#,###', 'fr_FR');
     return '${f.format(montant)} FCFA';
   }
 }
 
-// ── WIDGET STAT BOX ──
 class _StatBox extends StatelessWidget {
   final String label;
   final String valeur;
   const _StatBox({required this.label, required this.valeur});
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -308,9 +273,7 @@ class _StatBox extends StatelessWidget {
           const SizedBox(height: 3),
           Text(valeur,
               style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF1A1A1A)),
+                  fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF1A1A1A)),
               overflow: TextOverflow.ellipsis),
         ],
       ),
